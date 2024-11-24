@@ -1,7 +1,9 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
-from datetime import datetime, time
+from typing import Optional, List
+from datetime import datetime, time, timedelta
 from enum import Enum
+from src.models.models import StageEnum
+
 
 class StageEnum(str, Enum):
     open = "open"
@@ -76,3 +78,38 @@ class VacancyCreate(BaseModel):
 
     class Config:
         orm_mode = True  # Это необходимо для того, чтобы Pydantic корректно работал с SQLAlchemy моделями
+
+class SLAUpdate(BaseModel):
+    stage: StageEnum
+    sla_duration: timedelta  # Время в формате "1 day", "2 hours", etc.
+
+class SLAViolation(BaseModel):
+    resume_id: int
+    stage: StageEnum
+    time_exceeded: timedelta
+
+class SLAResponse(BaseModel):
+    violations: list[SLAViolation]
+
+# Запрос для SLA-отчета
+class SLAReportRequest(BaseModel):
+    from_date: Optional[datetime] = None
+    to_date: Optional[datetime] = None
+    stage: Optional[StageEnum] = None
+    user_id: Optional[int] = None  # Фильтр по HR
+
+# Детализация нарушения SLA
+class SLAViolationDetail(BaseModel):
+    resume_id: int
+    user: str
+    stage: StageEnum
+    time_exceeded: timedelta
+
+# Ответ SLA-отчета
+class SLAReportResponse(BaseModel):
+    total_violations: int
+    violations_detail: List[SLAViolationDetail]
+
+# Ответ для проверки SLA
+class SLAResponse(BaseModel):
+    violations: List[SLAViolationDetail]

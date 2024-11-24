@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Time, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Time, Boolean, Interval
 from sqlalchemy.orm import relationship
 from src.core.db.database import Base
 import enum
@@ -57,3 +57,11 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(Enum(UserRoleEnum), default=UserRoleEnum.hr)  # Добавление роли
     created_at = Column(DateTime)
+
+# Таблица настроек SLA
+class SLASettings(Base):
+    __tablename__ = "sla_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    stage = Column(Enum(StageEnum), unique=True, nullable=False)  # Стадия
+    sla_duration = Column(Interval, nullable=False)  # Время SLA, например, "1 day"
