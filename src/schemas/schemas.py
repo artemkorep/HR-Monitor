@@ -1,8 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional
-from enum import Enum
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 from datetime import datetime, time
-
+from enum import Enum
 
 class StageEnum(str, Enum):
     open = "open"
@@ -19,7 +18,10 @@ class ResumesSourceEnum(str, Enum):
     JobBoard = "JobBoard"
     Referral = "Referral"
 
-
+# Добавление ролей пользователей
+class UserRoleEnum(str, Enum):
+    hr = "HR"
+    team_lead = "HR Team Lead"
 
 class ResumeBase(BaseModel):
     user_id: int
@@ -36,8 +38,6 @@ class Resume(ResumeBase):
     class Config:
         orm_mode = True
 
-
-
 class ResumeFilter(BaseModel):
     stage: Optional[StageEnum]
     vacancy_id: Optional[int]
@@ -48,16 +48,31 @@ class ResumeFilter(BaseModel):
     sort_by_date: Optional[bool] = True
     sort_by_sla: Optional[bool] = False
 
+# Схемы пользователей
+class UserBase(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    role: UserRoleEnum
 
-class VacancyBase(BaseModel):
-    title: str
-    description: str
+class UserCreate(UserBase):
+    password: str
 
-class VacancyCreate(VacancyBase):
-    pass
-
-class Vacancy(VacancyBase):
-    id_vacancy: int
+class UserResponse(UserBase):
+    id_user: int
+    is_active: bool
 
     class Config:
         orm_mode = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# Схема для создания вакансии
+class VacancyCreate(BaseModel):
+    title: str
+    description: str
+
+    class Config:
+        orm_mode = True  # Это необходимо для того, чтобы Pydantic корректно работал с SQLAlchemy моделями
