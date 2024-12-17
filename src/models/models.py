@@ -1,29 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Time, Boolean, Interval
 from sqlalchemy.orm import relationship
 from src.core.db.database import Base
-import enum
+from src.models.enums import StageEnum, ResumesSourceEnum, UserRoleEnum
 
-# Существующий перечисления стадий
-class StageEnum(enum.Enum):
-    open = "open"
-    reviewed = "reviewed"
-    interview = "interview"
-    passed_interview = "passed_interview"
-    tech_interview = "tech_interview"
-    passed_tech_interview = "passed_tech_interview"
-    offer = "offer"
-
-class ResumesSourceEnum(enum.Enum):
-    LinkedIn = "LinkedIn"
-    Email = "Email"
-    JobBoard = "JobBoard"
-    Referral = "Referral"
-
-# Добавление ролей пользователей
-class UserRoleEnum(enum.Enum):
-    hr = "HR"
-    team_lead = "HR Team Lead"
-
+# Модель для резюме
 class Resume(Base):
     __tablename__ = "resumes"
 
@@ -39,6 +19,7 @@ class Resume(Base):
     user = relationship("User")
     vacancy = relationship("Vacancy")
 
+# Модель для вакансий
 class Vacancy(Base):
     __tablename__ = "vacancies"
 
@@ -46,17 +27,18 @@ class Vacancy(Base):
     title = Column(String)
     description = Column(String)
 
+# Модель для пользователей
 class User(Base):
     __tablename__ = "users"
 
     id_user = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String)
-    last_name = Column(String)
-    email = Column(String, unique=True, nullable=False, index=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
-    role = Column(Enum(UserRoleEnum), default=UserRoleEnum.hr)  # Добавление роли
-    created_at = Column(DateTime)
+    role = Column(Enum(UserRoleEnum), nullable=False)
+    created_at = Column(DateTime, nullable=False)
 
 # Таблица настроек SLA
 class SLASettings(Base):

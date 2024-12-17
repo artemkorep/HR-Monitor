@@ -5,16 +5,10 @@ from src.schemas.schemas import ResumeFilter
 from src.core.db.database import session_local
 from src.routers.dependencies import check_role
 from src.models.models import UserRoleEnum
+from src.core.db.database import get_db
+
 
 router = APIRouter()
-
-# Зависимость для получения сессии базы данных
-def get_db():
-    db = session_local()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Фильтрация резюме (только для HR)
 @router.post("/filter", dependencies=[Depends(check_role(UserRoleEnum.hr))])

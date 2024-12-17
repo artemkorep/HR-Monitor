@@ -7,16 +7,9 @@ from src.schemas.schemas import SLAUpdate, SLAReportRequest, SLAReportResponse, 
 from src.core.db.database import session_local
 from src.routers.dependencies import check_role
 from src.models.models import UserRoleEnum
+from src.core.db.database import get_db
 
 router = APIRouter()
-
-# Зависимость для получения сессии базы данных
-def get_db():
-    db = session_local()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # 1. Проверить нарушения SLA
 @router.get("/check_sla", response_model=SLAResponse, dependencies=[Depends(check_role(UserRoleEnum.team_lead))])

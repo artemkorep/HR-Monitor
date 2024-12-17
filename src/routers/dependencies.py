@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
 from src.models.models import UserRoleEnum
 
+
 # Конфигурация для JWT
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"

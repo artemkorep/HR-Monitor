@@ -2,29 +2,16 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, time, timedelta
 from enum import Enum
-from src.models.models import StageEnum
+from src.models.enums import UserRoleEnum, StageEnum
 
-
-class StageEnum(str, Enum):
-    open = "open"
-    reviewed = "reviewed"
-    interview = "interview"
-    passed_interview = "passed_interview"
-    tech_interview = "tech_interview"
-    passed_tech_interview = "passed_tech_interview"
-    offer = "offer"
-
+# Источники резюме
 class ResumesSourceEnum(str, Enum):
     LinkedIn = "LinkedIn"
     Email = "Email"
     JobBoard = "JobBoard"
     Referral = "Referral"
 
-# Добавление ролей пользователей
-class UserRoleEnum(str, Enum):
-    hr = "HR"
-    team_lead = "HR Team Lead"
-
+# Базовая схема резюме
 class ResumeBase(BaseModel):
     user_id: int
     vacancy_id: int
@@ -38,7 +25,7 @@ class Resume(ResumeBase):
     id_resume: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ResumeFilter(BaseModel):
     stage: Optional[StageEnum]
@@ -65,7 +52,7 @@ class UserResponse(UserBase):
     is_active: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
@@ -77,8 +64,9 @@ class VacancyCreate(BaseModel):
     description: str
 
     class Config:
-        orm_mode = True  # Это необходимо для того, чтобы Pydantic корректно работал с SQLAlchemy моделями
+        from_attributes = True
 
+# Обновление SLA
 class SLAUpdate(BaseModel):
     stage: StageEnum
     sla_duration: timedelta  # Время в формате "1 day", "2 hours", etc.
@@ -89,7 +77,7 @@ class SLAViolation(BaseModel):
     time_exceeded: timedelta
 
 class SLAResponse(BaseModel):
-    violations: list[SLAViolation]
+    violations: List[SLAViolation]
 
 # Запрос для SLA-отчета
 class SLAReportRequest(BaseModel):

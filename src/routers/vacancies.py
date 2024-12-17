@@ -5,15 +5,10 @@ from src.schemas.schemas import VacancyCreate
 from src.core.db.database import session_local
 from src.routers.dependencies import check_role
 from src.models.models import UserRoleEnum
+from src.core.db.database import get_db
 
 router = APIRouter()
 
-def get_db():
-    db = session_local()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Создание новой вакансии (только для Team Lead)
 @router.post("/", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
