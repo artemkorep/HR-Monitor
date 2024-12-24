@@ -17,7 +17,7 @@ def get_current_user(access_token: str = Cookie(None), db: Session = Depends(get
         token = access_token.replace("Bearer ", "")
 
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, settings.ACCESS_SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
 
         email: str = payload.get("sub")
@@ -32,12 +32,31 @@ def get_current_user(access_token: str = Cookie(None), db: Session = Depends(get
         raise HTTPException(status_code=401, detail="Неверный токен")
 
 
-def check_role(required_role: UserRoleEnum):
-    def role_checker(current_user: dict = Depends(get_current_user)):
-        if current_user.role != required_role.value:
-            raise HTTPException(
-                status_code=403, detail="Доступ запрещен: недостаточно прав"
-            )
-        return current_user
+def check_team_lead(current_user: dict = Depends(get_current_user)):
+    if current_user.role != UserRoleEnum.team_lead:
+        raise HTTPException(
+            status_code=403, detail="Доступ только для Team Leader: недостаточно прав"
+        )
+    return current_user
 
-    return role_checker
+
+def check_hr(current_user: dict = Depends(get_current_user)):
+    if not (
+        (current_user.role == UserRoleEnum.hr)
+        or (current_user.role == UserRoleEnum.team_lead)
+    ):
+        raise HTTPException(
+            status_code=403, detail="Доступ кандидатам запрещен: недостаточно прав"
+        )
+    return current_user
+
+
+def check_candidate(current_user: dict = Depends(get_current_user)):
+    if not (
+        (current_user.role == UserRoleEnum.candidate)
+        or (current_user.role == UserRoleEnum.team_lead)
+    ):
+        raise HTTPException(
+            status_code=403, detail="Доступ HR запрещен: недостаточно прав"
+        )
+    return current_user

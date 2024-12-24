@@ -2,29 +2,26 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from src.models.models import Resume
 from src.schemas import ResumeFilter, CreateResume
-from src.core.db.database import session_local
-from src.core.dependencies import check_role
-from src.models.models import UserRoleEnum, Resume, User, Vacancy
+from src.core.dependencies import check_candidate, check_hr, get_current_user
+from src.models.models import Resume, Vacancy
 from src.core.db.database import get_db
 
 
 router = APIRouter()
 
 
-@router.post("/create")
+@router.post("/create", dependencies=[Depends(check_candidate)])
 async def create_resume(
-    resume: CreateResume, db: Session = Depends(get_db)
+    resume: CreateResume,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> CreateResume:
-    user = db.query(User).filter_by(id_user=resume.user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     vacancy = db.query(Vacancy).filter_by(id_vacancy=resume.vacancy_id).first()
     if not vacancy:
         raise HTTPException(status_code=404, detail="Vacancy not found")
 
     new_resume = Resume(
-        user_id=resume.user_id,
+        user_id=current_user.id_user,
         vacancy_id=resume.vacancy_id,
         source=resume.source,
         current_stage=resume.current_stage,
@@ -48,7 +45,7 @@ async def create_resume(
     )
 
 
-@router.post("/filter", dependencies=[Depends(check_role(UserRoleEnum.hr))])
+@router.post("/filter", dependencies=[Depends(check_hr)])
 async def filter_resumes(filters: ResumeFilter, db: Session = Depends(get_db)):
     query = db.query(Resume)
 
@@ -79,9 +76,7 @@ async def filter_resumes(filters: ResumeFilter, db: Session = Depends(get_db)):
     return query.all()
 
 
-@router.patch(
-    "/update_stage/{resume_id}", dependencies=[Depends(check_role(UserRoleEnum.hr))]
-)
+@router.patch("/update_stage/{resume_id}", dependencies=[Depends(check_hr)])
 async def update_resume_stage(
     resume_id: int, new_stage: str, db: Session = Depends(get_db)
 ):

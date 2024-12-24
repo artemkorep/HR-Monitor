@@ -1,19 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import datetime, timedelta
-from src.models.models import Resume, SLASettings, User, StageEnum
+from datetime import datetime
+from src.models.models import Resume, SLASettings, User
 from src.schemas import (
     SLAUpdate,
     SLAReportRequest,
     SLAReportResponse,
     SLAResponse,
 )
-from src.core.db.database import session_local
-from src.core.dependencies import check_role
-from src.models.models import UserRoleEnum
+from src.core.dependencies import check_team_lead
 from src.core.db.database import get_db
-import json
 
 router = APIRouter()
 
@@ -21,7 +17,7 @@ router = APIRouter()
 @router.get(
     "/check",
     response_model=SLAResponse,
-    dependencies=[Depends(check_role(UserRoleEnum.team_lead))],
+    dependencies=[Depends(check_team_lead)],
 )
 async def check_sla(db: Session = Depends(get_db)):
     violations = []
@@ -55,8 +51,8 @@ async def check_sla(db: Session = Depends(get_db)):
     return {"violations": violations}
 
 
-@router.post("/update", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
-async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
+@router.post("/update", dependencies=[Depends(check_team_lead)])
+async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)) -> SLAUpdate:
     existing_sla = db.query(SLASettings).filter(SLASettings.stage == sla.stage).first()
     if existing_sla:
         existing_sla.sla_duration = sla.sla_duration
@@ -64,15 +60,16 @@ async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
         new_sla = SLASettings(stage=sla.stage, sla_duration=sla.sla_duration)
         db.add(new_sla)
     db.commit()
-    return {"message": "SLA updated successfully"}
+    return sla
 
 
 @router.post(
     "/report",
-    response_model=SLAReportResponse,
-    dependencies=[Depends(check_role(UserRoleEnum.team_lead))],
+    dependencies=[Depends(check_team_lead)],
 )
-async def get_sla_report(filters: SLAReportRequest, db: Session = Depends(get_db)):
+async def get_sla_report(
+    filters: SLAReportRequest, db: Session = Depends(get_db)
+) -> SLAReportResponse:
     sla_settings = {sla.stage: sla.sla_duration for sla in db.query(SLASettings).all()}
 
     query = db.query(Resume, User).join(User, Resume.user_id == User.id_user)
