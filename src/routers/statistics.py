@@ -2,15 +2,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from src.models.models import Resume, Vacancy
-from src.core.db.database import session_local
-from src.core.dependencies import check_role
-from src.models.models import UserRoleEnum
+from src.core.dependencies import check_team_lead
 from src.core.db.database import get_db
 
 router = APIRouter()
 
 
-@router.get("/", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
+@router.get("/", dependencies=[Depends(check_team_lead)])
 async def get_statistics(db: Session = Depends(get_db)):
     avg_time_per_stage = {}
     distribution_per_stage = {}

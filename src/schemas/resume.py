@@ -1,7 +1,6 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
-from datetime import datetime, time, timedelta
-from enum import Enum
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime, time
 from src.schemas.enums import StageEnum, ResumesSourceEnum
 
 
@@ -17,7 +16,6 @@ class ResumeFilter(BaseModel):
 
 
 class CreateResume(BaseModel):
-    user_id: int
     vacancy_id: int
     source: ResumesSourceEnum
     current_stage: StageEnum

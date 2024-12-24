@@ -51,6 +51,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)) -> User
 
     hashed_password = pwd_context.hash(user.password)
     db_user = User(
+        login=user.login,
         first_name=user.first_name,
         last_name=user.last_name,
         email=user.email,
@@ -63,6 +64,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)) -> User
     db.commit()
     db.refresh(db_user)
     return UserBase(
+        login=user.login,
         first_name=user.first_name,
         last_name=user.last_name,
         email=user.email,
@@ -72,12 +74,12 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)) -> User
 
 @router.post("/login", summary="Login in account")
 async def login(
-    email: str,
+    login: str,
     password: str,
     response: Response,
     db: Session = Depends(get_db),
 ) -> AuthResponse:
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.login == login).first()
     if not user or not pwd_context.verify(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Некорректный email или пароль")
 

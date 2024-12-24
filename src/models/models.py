@@ -42,6 +42,7 @@ class User(Base):
     __tablename__ = "users"
 
     id_user = Column(Integer, primary_key=True, index=True)
+    login = Column(String, nullable=False, unique=True)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
@@ -49,6 +50,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(Enum(UserRoleEnum), nullable=False)
     created_at = Column(DateTime, nullable=False)
+    is_supervisor = Column(Boolean, default=False)
 
 
 class SLASettings(Base):
