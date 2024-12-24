@@ -23,10 +23,3 @@ app.include_router(sla.router, prefix="/sla", tags=["SLA"])
 
 
 Base.metadata.create_all(bind=engine)
-
-@app.get("/protected-route", summary="Пример защищенного маршрута")
-async def protected_route(request: Request, current_user: User = Depends(get_current_user)):
-    print(f"Заголовки запроса: {request.headers}")  # Логируем заголовки
-    print(f"Cookie запроса: {request.cookies}")  # Логируем содержимое Cookie
-    return {"message": "Вы успешно авторизованы", "user_email": current_user.email}
-

@@ -1,7 +1,18 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, DateTime, Time, Boolean, Interval
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    Enum,
+    DateTime,
+    Time,
+    Boolean,
+    Interval,
+)
 from sqlalchemy.orm import relationship
 from src.core.db.database import Base
 from src.models.enums import StageEnum, ResumesSourceEnum, UserRoleEnum
+
 
 # Модель для резюме
 class Resume(Base):
@@ -19,6 +30,7 @@ class Resume(Base):
     user = relationship("User")
     vacancy = relationship("Vacancy")
 
+
 # Модель для вакансий
 class Vacancy(Base):
     __tablename__ = "vacancies"
@@ -26,6 +38,7 @@ class Vacancy(Base):
     id_vacancy = Column(Integer, primary_key=True, index=True)
     title = Column(String)
     description = Column(String)
+
 
 # Модель для пользователей
 class User(Base):
@@ -39,6 +52,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(Enum(UserRoleEnum), nullable=False)
     created_at = Column(DateTime, nullable=False)
+
 
 # Таблица настроек SLA
 class SLASettings(Base):

@@ -14,6 +14,7 @@ engine = create_engine(SQLDBURL)
 session_local = sessionmaker(autoflush=False, autocommit=False, bind=engine)
 Base = declarative_base()
 
+
 # Функция для получения сессии базы данных
 def get_db():
     db = session_local()

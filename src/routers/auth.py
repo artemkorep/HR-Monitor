@@ -10,22 +10,20 @@ from fastapi.responses import JSONResponse
 from src.models.models import User, UserRoleEnum
 from src.schemas.schemas import UserCreate, Token
 from src.core.db.database import session_local
-
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+from src.settings import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 router = APIRouter()
 
+
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
 
 @router.post("/register", summary="Регистрация нового пользователя")
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -44,7 +42,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         last_name=user.last_name,
         email=user.email,
         hashed_password=hashed_password,
-        role=role, 
+        role=role,
         is_active=True,
         created_at=datetime.utcnow(),
     )
@@ -53,30 +51,25 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return {"message": "Пользователь успешно зарегистрирован"}
 
+
 @router.post("/login", response_model=Token, summary="Авторизация пользователя")
 async def login(email: str, password: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user or not pwd_context.verify(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Некорректный email или пароль")
 
-    # Генерация токена
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role.value},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
-    
-    print(f"Сгенерированный токен: {access_token}")  # Логируем токен
 
-    # Установка токена в HTTP-only cookie
     response = JSONResponse(content={"message": "Успешная авторизация"})
     response.set_cookie(
         key="access_token",
-        value=f"Bearer {access_token}",  # Включаем Bearer для читаемости
+        value=f"Bearer {access_token}",
         httponly=True,
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         secure=False,
-        samesite="lax"
+        samesite="lax",
     )
-    print("Токен установлен в Cookie")  # Логируем установку
     return response
-
