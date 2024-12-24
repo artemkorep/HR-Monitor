@@ -6,38 +6,33 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from src.core.db.database import get_db
-
+from fastapi.responses import JSONResponse
 from src.models.models import User, UserRoleEnum
 from src.schemas.schemas import UserCreate, Token
 from src.core.db.database import session_local
 
-# Загрузка переменных окружения
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
-# Для хэширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Роутер
+
 router = APIRouter()
 
-# Генерация токена
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# Регистрация пользователя
 @router.post("/register", summary="Регистрация нового пользователя")
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
 
-    # Проверка существования роли
     try:
         role = UserRoleEnum(user.role)
     except ValueError:
@@ -49,7 +44,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         last_name=user.last_name,
         email=user.email,
         hashed_password=hashed_password,
-        role=role,  # Здесь используем проверенную роль
+        role=role, 
         is_active=True,
         created_at=datetime.utcnow(),
     )
@@ -58,15 +53,30 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return {"message": "Пользователь успешно зарегистрирован"}
 
-# Аутентификация пользователя
 @router.post("/login", response_model=Token, summary="Авторизация пользователя")
 async def login(email: str, password: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user or not pwd_context.verify(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Некорректный email или пароль")
 
+    # Генерация токена
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role.value},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    print(f"Сгенерированный токен: {access_token}")  # Логируем токен
+
+    # Установка токена в HTTP-only cookie
+    response = JSONResponse(content={"message": "Успешная авторизация"})
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",  # Включаем Bearer для читаемости
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=False,
+        samesite="lax"
+    )
+    print("Токен установлен в Cookie")  # Логируем установку
+    return response
+
