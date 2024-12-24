@@ -104,11 +104,17 @@ class SLAReportRequest(BaseModel):
     user_id: Optional[int] = None
 
 
+class UserDetail(BaseModel):
+    id: int
+    name: str
+    email: str
+
+
 class SLAViolationDetail(BaseModel):
     resume_id: int
-    user: str
-    stage: StageEnum
-    time_exceeded: timedelta
+    user: Optional[UserDetail]
+    stage: str
+    time_exceeded: str
 
 
 class SLAReportResponse(BaseModel):

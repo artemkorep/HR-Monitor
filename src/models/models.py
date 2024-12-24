@@ -14,7 +14,6 @@ from src.core.db.database import Base
 from src.models.enums import StageEnum, ResumesSourceEnum, UserRoleEnum
 
 
-# Модель для резюме
 class Resume(Base):
     __tablename__ = "resumes"
 
@@ -31,7 +30,6 @@ class Resume(Base):
     vacancy = relationship("Vacancy")
 
 
-# Модель для вакансий
 class Vacancy(Base):
     __tablename__ = "vacancies"
 
@@ -40,7 +38,6 @@ class Vacancy(Base):
     description = Column(String)
 
 
-# Модель для пользователей
 class User(Base):
     __tablename__ = "users"
 
@@ -54,10 +51,9 @@ class User(Base):
     created_at = Column(DateTime, nullable=False)
 
 
-# Таблица настроек SLA
 class SLASettings(Base):
     __tablename__ = "sla_settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    stage = Column(Enum(StageEnum), unique=True, nullable=False)  # Стадия
-    sla_duration = Column(Interval, nullable=False)  # Время SLA, например, "1 day"
+    stage = Column(Enum(StageEnum), unique=True, nullable=False)
+    sla_duration = Column(Interval, nullable=False)

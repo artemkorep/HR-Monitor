@@ -10,7 +10,6 @@ from src.core.db.database import get_db
 router = APIRouter()
 
 
-# Создание новой вакансии (только для Team Lead)
 @router.post("/", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
 async def create_vacancy(vacancy: VacancyCreate, db: Session = Depends(get_db)):
     new_vacancy = Vacancy(title=vacancy.title, description=vacancy.description)

@@ -13,11 +13,11 @@ from src.core.db.database import session_local
 from src.routers.dependencies import check_role
 from src.models.models import UserRoleEnum
 from src.core.db.database import get_db
+import json
 
 router = APIRouter()
 
 
-# 1. Проверить нарушения SLA
 @router.get(
     "/check_sla",
     response_model=SLAResponse,
@@ -34,18 +34,27 @@ async def check_sla(db: Session = Depends(get_db)):
             sla_duration = sla_settings[stage]
             time_on_stage = datetime.utcnow() - resume.updated_at
             if time_on_stage > sla_duration:
+                user = db.query(User).filter(User.id_user == resume.user_id).first()
                 violations.append(
                     {
                         "resume_id": resume.id_resume,
                         "stage": stage,
-                        "time_exceeded": time_on_stage - sla_duration,
+                        "time_exceeded": str(time_on_stage - sla_duration),
+                        "user": (
+                            {
+                                "id": user.id_user,
+                                "name": user.first_name,
+                                "email": user.email,
+                            }
+                            if user
+                            else None
+                        ),
                     }
                 )
 
     return {"violations": violations}
 
 
-# 2. Обновить настройки SLA
 @router.post("/update_sla", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
 async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
     existing_sla = db.query(SLASettings).filter(SLASettings.stage == sla.stage).first()
@@ -58,7 +67,6 @@ async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
     return {"message": "SLA updated successfully"}
 
 
-# 3. Генерация отчета по SLA
 @router.post(
     "/sla_report",
     response_model=SLAReportResponse,
@@ -67,10 +75,8 @@ async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
 async def get_sla_report(filters: SLAReportRequest, db: Session = Depends(get_db)):
     sla_settings = {sla.stage: sla.sla_duration for sla in db.query(SLASettings).all()}
 
-    # Базовый запрос
     query = db.query(Resume, User).join(User, Resume.user_id == User.id_user)
 
-    # Применение фильтров
     if filters.from_date:
         query = query.filter(Resume.updated_at >= filters.from_date)
 
@@ -83,9 +89,9 @@ async def get_sla_report(filters: SLAReportRequest, db: Session = Depends(get_db
     if filters.user_id:
         query = query.filter(Resume.user_id == filters.user_id)
 
-    # Подготовка данных
     total_violations = 0
     violations_detail = []
+
     for resume, user in query.all():
         stage = resume.current_stage
         if stage in sla_settings:
@@ -96,9 +102,17 @@ async def get_sla_report(filters: SLAReportRequest, db: Session = Depends(get_db
                 violations_detail.append(
                     {
                         "resume_id": resume.id_resume,
-                        "user": f"{user.first_name} {user.last_name}",
                         "stage": stage,
-                        "time_exceeded": time_on_stage - sla_duration,
+                        "time_exceeded": str(time_on_stage - sla_duration),
+                        "user": (
+                            {
+                                "id": user.id_user,
+                                "name": user.first_name,
+                                "email": user.email,
+                            }
+                            if user
+                            else None
+                        ),
                     }
                 )
 

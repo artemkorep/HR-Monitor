@@ -1,7 +1,6 @@
 import enum
 
 
-# Перечисления стадий резюме
 class StageEnum(enum.Enum):
     open = "open"
     reviewed = "reviewed"
@@ -12,7 +11,6 @@ class StageEnum(enum.Enum):
     offer = "offer"
 
 
-# Перечисления источников резюме
 class ResumesSourceEnum(enum.Enum):
     LinkedIn = "LinkedIn"
     Email = "Email"

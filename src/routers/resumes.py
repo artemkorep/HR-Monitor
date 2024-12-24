@@ -46,7 +46,6 @@ async def create_resume(resume: CreateResumeRequest, db: Session = Depends(get_d
     )
 
 
-# Фильтрация резюме (только для HR)
 @router.post("/filter", dependencies=[Depends(check_role(UserRoleEnum.hr))])
 async def filter_resumes(filters: ResumeFilter, db: Session = Depends(get_db)):
     query = db.query(Resume)
@@ -78,7 +77,6 @@ async def filter_resumes(filters: ResumeFilter, db: Session = Depends(get_db)):
     return query.all()
 
 
-# Обновление стадии резюме (только для HR)
 @router.patch(
     "/update_stage/{resume_id}", dependencies=[Depends(check_role(UserRoleEnum.hr))]
 )
