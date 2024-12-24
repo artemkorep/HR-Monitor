@@ -50,6 +50,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(Enum(UserRoleEnum), nullable=False)
     created_at = Column(DateTime, nullable=False)
+    is_supervisor = Column(Boolean, default=False)
 
 
 class SLASettings(Base):

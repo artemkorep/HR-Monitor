@@ -22,6 +22,7 @@ class UserRoleEnum(str, Enum):
     candidate = "Candidate"
     hr = "HR"
     team_lead = "HR Team Lead"
+    admin = "Admin"
 
     @classmethod
     def _missing_(cls, value):
