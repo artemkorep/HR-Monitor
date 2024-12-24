@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from src.core.db.database import Base, engine
-from src.core.security import JWTBearer
 from src.routers import router
 
 
