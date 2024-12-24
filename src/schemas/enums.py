@@ -1,7 +1,7 @@
-import enum
+from enum import Enum
 
 
-class StageEnum(enum.Enum):
+class StageEnum(Enum):
     open = "open"
     reviewed = "reviewed"
     interview = "interview"
@@ -11,14 +11,14 @@ class StageEnum(enum.Enum):
     offer = "offer"
 
 
-class ResumesSourceEnum(enum.Enum):
+class ResumesSourceEnum(str, Enum):
     LinkedIn = "LinkedIn"
     Email = "Email"
     JobBoard = "JobBoard"
     Referral = "Referral"
 
 
-class UserRoleEnum(str, enum.Enum):
+class UserRoleEnum(str, Enum):
     hr = "HR"
     team_lead = "HR Team Lead"
 

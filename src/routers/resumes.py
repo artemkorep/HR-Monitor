@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from src.models.models import Resume
-from src.schemas.schemas import ResumeFilter, CreateResumeRequest
+from src.schemas import ResumeFilter, CreateResume
 from src.core.db.database import session_local
-from src.routers.dependencies import check_role
+from src.core.dependencies import check_role
 from src.models.models import UserRoleEnum, Resume, User, Vacancy
 from src.core.db.database import get_db
 
@@ -12,7 +12,9 @@ router = APIRouter()
 
 
 @router.post("/create")
-async def create_resume(resume: CreateResumeRequest, db: Session = Depends(get_db)):
+async def create_resume(
+    resume: CreateResume, db: Session = Depends(get_db)
+) -> CreateResume:
     user = db.query(User).filter_by(id_user=resume.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -35,7 +37,7 @@ async def create_resume(resume: CreateResumeRequest, db: Session = Depends(get_d
     db.commit()
     db.refresh(new_resume)
 
-    return CreateResumeRequest(
+    return CreateResume(
         user_id=new_resume.user_id,
         vacancy_id=new_resume.vacancy_id,
         source=new_resume.source,

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from src.models.models import Resume, Vacancy
 from src.core.db.database import session_local
-from src.routers.dependencies import check_role
+from src.core.dependencies import check_role
 from src.models.models import UserRoleEnum
 from src.core.db.database import get_db
 
