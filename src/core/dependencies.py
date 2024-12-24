@@ -1,4 +1,3 @@
-from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
 from src.models.models import UserRoleEnum
@@ -8,9 +7,6 @@ from src.models.models import User
 from src.core.db.database import get_db
 from pydantic import ValidationError
 from src.settings import settings
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def get_current_user(access_token: str = Cookie(None), db: Session = Depends(get_db)):

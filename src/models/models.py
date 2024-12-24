@@ -11,7 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from src.core.db.database import Base
-from src.models.enums import StageEnum, ResumesSourceEnum, UserRoleEnum
+from src.schemas import StageEnum, ResumesSourceEnum, UserRoleEnum
 
 
 class Resume(Base):

@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
 from src.models.models import Resume, SLASettings, User, StageEnum
-from src.schemas.schemas import (
+from src.schemas import (
     SLAUpdate,
     SLAReportRequest,
     SLAReportResponse,
     SLAResponse,
 )
 from src.core.db.database import session_local
-from src.routers.dependencies import check_role
+from src.core.dependencies import check_role
 from src.models.models import UserRoleEnum
 from src.core.db.database import get_db
 import json
@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/check_sla",
+    "/check",
     response_model=SLAResponse,
     dependencies=[Depends(check_role(UserRoleEnum.team_lead))],
 )
@@ -55,7 +55,7 @@ async def check_sla(db: Session = Depends(get_db)):
     return {"violations": violations}
 
 
-@router.post("/update_sla", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
+@router.post("/update", dependencies=[Depends(check_role(UserRoleEnum.team_lead))])
 async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
     existing_sla = db.query(SLASettings).filter(SLASettings.stage == sla.stage).first()
     if existing_sla:
@@ -68,7 +68,7 @@ async def update_sla(sla: SLAUpdate, db: Session = Depends(get_db)):
 
 
 @router.post(
-    "/sla_report",
+    "/report",
     response_model=SLAReportResponse,
     dependencies=[Depends(check_role(UserRoleEnum.team_lead))],
 )
