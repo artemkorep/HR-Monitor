@@ -33,42 +33,16 @@ def get_current_user(access_token: str = Cookie(None), db: Session = Depends(get
 
 
 def check_team_lead(current_user: dict = Depends(get_current_user)):
-    if (current_user.role != UserRoleEnum.team_lead) and (
-        current_user.role != UserRoleEnum.admin
-    ):
+    if current_user.role != UserRoleEnum.team_lead:
         raise HTTPException(
             status_code=403, detail="Доступ только для Team Leader: недостаточно прав"
         )
     return current_user
 
 
-def check_admin(current_user: dict = Depends(get_current_user)):
-    if not (current_user.role == UserRoleEnum.admin):
-        raise HTTPException(
-            status_code=403, detail="Доступ кандидатам запрещен: недостаточно прав"
-        )
-    return check_admin
-
-
 def check_hr(current_user: dict = Depends(get_current_user)):
-    if not (
-        (current_user.role == UserRoleEnum.hr)
-        or (current_user.role == UserRoleEnum.team_lead)
-        or (current_user.role == UserRoleEnum.admin)
-    ):
+    if not (current_user.role == UserRoleEnum.hr):
         raise HTTPException(
-            status_code=403, detail="Доступ кандидатам запрещен: недостаточно прав"
-        )
-    return current_user
-
-
-def check_candidate(current_user: dict = Depends(get_current_user)):
-    if not (
-        (current_user.role == UserRoleEnum.candidate)
-        or (current_user.role == UserRoleEnum.team_lead)
-        or (current_user.role == UserRoleEnum.admin)
-    ):
-        raise HTTPException(
-            status_code=403, detail="Доступ HR запрещен: недостаточно прав"
+            status_code=403, detail="Доступ только для  HR: недостаточно прав"
         )
     return current_user

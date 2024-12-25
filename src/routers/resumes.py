@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from src.models.models import Resume
 from src.schemas import ResumeFilter, CreateResume
-from src.core.dependencies import check_candidate, check_hr, get_current_user
+from src.core.dependencies import check_hr, get_current_user
 from src.models.models import Resume, Vacancy
 from src.core.db.database import get_db
 
@@ -10,18 +10,18 @@ from src.core.db.database import get_db
 router = APIRouter()
 
 
-@router.post("/create", dependencies=[Depends(check_candidate)])
+@router.post("/create")
 async def create_resume(
     resume: CreateResume,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> CreateResume:
-    vacancy = db.query(Vacancy).filter_by(id_vacancy=resume.vacancy_id).first()
+    vacancy = db.query(Vacancy).filter_by(id=resume.vacancy_id).first()
     if not vacancy:
         raise HTTPException(status_code=404, detail="Vacancy not found")
 
     new_resume = Resume(
-        user_id=current_user.id_user,
+        user_id=current_user.id,
         vacancy_id=resume.vacancy_id,
         source=resume.source,
         current_stage=resume.current_stage,
@@ -80,7 +80,7 @@ async def filter_resumes(filters: ResumeFilter, db: Session = Depends(get_db)):
 async def update_resume_stage(
     resume_id: int, new_stage: str, db: Session = Depends(get_db)
 ):
-    resume = db.query(Resume).filter(Resume.id_resume == resume_id).first()
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
     if resume:
         resume.current_stage = new_stage
         db.commit()

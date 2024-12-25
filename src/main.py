@@ -16,34 +16,5 @@ app = FastAPI(
 )
 app.include_router(router)
 
-Base.metadata.drop_all(bind=engine)
+
 Base.metadata.create_all(bind=engine)
-
-
-def create_supervisor(db: Session = Depends(get_db)):
-    admin_exists = db.query(User).filter(User.role == UserRoleEnum.admin).first()
-    if not admin_exists:
-        hashed_password = CryptContext(schemes=["bcrypt"]).hash("admin")
-        new_admin = User(
-            login="admin",
-            first_name="Admin",
-            last_name="User",
-            email="admin@example.com",
-            hashed_password=hashed_password,
-            is_active=True,
-            role=UserRoleEnum.admin,
-            created_at=datetime.utcnow(),
-        )
-        db.add(new_admin)
-        db.commit()
-        db.refresh(new_admin)
-        print("Admin user created!")
-
-
-@app.on_event("startup")
-def on_startup():
-    db = session_local()
-    try:
-        create_supervisor(db)
-    finally:
-        db.close()

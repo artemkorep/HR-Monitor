@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
-from src.models.models import Resume, SLASettings, User
+from src.models.models import Resume, SLASettings, User, UserTeamLead
 from src.schemas import (
     SLAUpdate,
     SLAReportRequest,
@@ -12,6 +12,39 @@ from src.core.dependencies import check_team_lead
 from src.core.db.database import get_db
 
 router = APIRouter()
+
+
+@router.post("/activate_hr")
+async def activate_hr(
+    hr_id: int, db: Session = Depends(get_db), user: dict = Depends(check_team_lead)
+):
+    existing_team_lead = (
+        db.query(UserTeamLead).filter(UserTeamLead.hr_user_id == hr_id).first()
+    )
+    if existing_team_lead:
+        raise HTTPException(status_code=400, detail="This HR is already assigned")
+    new_team_lead_assignment = UserTeamLead(team_lead_user_id=user.id, hr_user_id=hr_id)
+    db.add(new_team_lead_assignment)
+    db.commit()
+
+
+@router.delete("/deactivate_hr")
+async def deactivate_hr(
+    hr_id: int, db: Session = Depends(get_db), user: dict = Depends(check_team_lead)
+):
+    existing_hr = (
+        db.query(UserTeamLead)
+        .filter(UserTeamLead.hr_user_id == hr_id)
+        .filter(UserTeamLead.team_lead_user_id == user.id)
+        .first()
+    )
+    if not (existing_hr):
+        raise HTTPException(
+            status_code=400,
+            detail="HR has not been found, or you are not his team lead",
+        )
+    db.delete(existing_hr)
+    db.commit()
 
 
 @router.get(
@@ -30,15 +63,15 @@ async def check_sla(db: Session = Depends(get_db)):
             sla_duration = sla_settings[stage]
             time_on_stage = datetime.utcnow() - resume.updated_at
             if time_on_stage > sla_duration:
-                user = db.query(User).filter(User.id_user == resume.user_id).first()
+                user = db.query(User).filter(User.id == resume.user_id).first()
                 violations.append(
                     {
-                        "resume_id": resume.id_resume,
+                        "resume_id": resume.id,
                         "stage": stage,
                         "time_exceeded": str(time_on_stage - sla_duration),
                         "user": (
                             {
-                                "id": user.id_user,
+                                "id": user.id,
                                 "name": user.first_name,
                                 "email": user.email,
                             }
@@ -72,7 +105,7 @@ async def get_sla_report(
 ) -> SLAReportResponse:
     sla_settings = {sla.stage: sla.sla_duration for sla in db.query(SLASettings).all()}
 
-    query = db.query(Resume, User).join(User, Resume.user_id == User.id_user)
+    query = db.query(Resume, User).join(User, Resume.user_id == User.id)
 
     if filters.from_date:
         query = query.filter(Resume.updated_at >= filters.from_date)
@@ -98,12 +131,12 @@ async def get_sla_report(
                 total_violations += 1
                 violations_detail.append(
                     {
-                        "resume_id": resume.id_resume,
+                        "resume_id": resume.id,
                         "stage": stage,
                         "time_exceeded": str(time_on_stage - sla_duration),
                         "user": (
                             {
-                                "id": user.id_user,
+                                "id": user.id,
                                 "name": user.first_name,
                                 "email": user.email,
                             }
