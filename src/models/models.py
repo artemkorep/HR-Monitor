@@ -11,15 +11,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from src.core.db.database import Base
+from datetime import datetime
 from src.schemas import StageEnum, ResumesSourceEnum, UserRoleEnum
 
 
 class Resume(Base):
     __tablename__ = "resumes"
 
-    id_resume = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id_user"))
-    vacancy_id = Column(Integer, ForeignKey("vacancies.id_vacancy"))
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    vacancy_id = Column(Integer, ForeignKey("vacancies.id"))
     source = Column(Enum(ResumesSourceEnum))
     current_stage = Column(Enum(StageEnum))
     sla_time = Column(Time)
@@ -33,7 +34,7 @@ class Resume(Base):
 class Vacancy(Base):
     __tablename__ = "vacancies"
 
-    id_vacancy = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
     description = Column(String)
 
@@ -41,7 +42,7 @@ class Vacancy(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id_user = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     login = Column(String, nullable=False, unique=True)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
@@ -50,7 +51,17 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(Enum(UserRoleEnum), nullable=False)
     created_at = Column(DateTime, nullable=False)
-    is_supervisor = Column(Boolean, default=False)
+
+
+class UserTeamLead(Base):
+    __tablename__ = "user_team_leads"
+
+    hr_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    team_lead_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+
+    hr_user = relationship("User", foreign_keys=[hr_user_id])
+    team_lead_user = relationship("User", foreign_keys=[team_lead_user_id])
 
 
 class SLASettings(Base):

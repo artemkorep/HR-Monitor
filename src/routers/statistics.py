@@ -1,30 +1,47 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from src.models.models import Resume, Vacancy
-from src.core.dependencies import check_team_lead
+from src.schemas import UserRoleEnum
+from src.models.models import Resume, Vacancy, User, UserTeamLead
+from src.core.dependencies import get_current_user
 from src.core.db.database import get_db
 
 router = APIRouter()
 
 
-@router.get("/", dependencies=[Depends(check_team_lead)])
-async def get_statistics(db: Session = Depends(get_db)):
+@router.get("/")
+async def get_statistics(
+    current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)
+):
     avg_time_per_stage = {}
     distribution_per_stage = {}
     distribution_per_source = {}
     sla_violations = 0
 
-    resumes = db.query(Resume).all()
+    if current_user.role == UserRoleEnum.hr:
+        resumes = db.query(Resume).filter(Resume.user_id == current_user.id).all()
+    elif current_user.role == UserRoleEnum.team_lead:
+
+        hr_ids = (
+            db.query(User.id)
+            .join(UserTeamLead, UserTeamLead.team_lead_user_id == current_user.id)
+            .all()
+        )
+        hr_ids = [hr_id[0] for hr_id in hr_ids]
+
+        resumes = db.query(Resume).filter(Resume.user_id.in_(hr_ids)).all()
+    else:
+
+        resumes = db.query(Resume).all()
 
     for resume in resumes:
-        sla_seconds = (
-            resume.sla_time.hour * 3600
-            + resume.sla_time.minute * 60
-            + resume.sla_time.second
-            if resume.sla_time
-            else 0
-        )
+        sla_seconds = 0
+        if resume.sla_time:
+            sla_seconds = (
+                resume.sla_time.hour * 3600
+                + resume.sla_time.minute * 60
+                + resume.sla_time.second
+            )
 
         if resume.current_stage not in avg_time_per_stage:
             avg_time_per_stage[resume.current_stage] = []
@@ -49,17 +66,25 @@ async def get_statistics(db: Session = Depends(get_db)):
         stage: sum(times) / len(times) for stage, times in avg_time_per_stage.items()
     }
 
-    avg_candidates_per_vacancy = (
-        db.query(
-            Vacancy.id_vacancy, func.count(Resume.id_resume).label("candidates_count")
+    if current_user.role == UserRoleEnum.hr:
+        avg_candidates_per_vacancy = (
+            db.query(Vacancy.id, func.count(Resume.id).label("candidates_count"))
+            .join(Resume, Resume.vacancy_id == Vacancy.id)
+            .filter(Resume.user_id == current_user.id)
+            .group_by(Vacancy.id)
+            .all()
         )
-        .join(Resume)
-        .group_by(Vacancy.id_vacancy)
-        .all()
-    )
+    elif current_user.role == UserRoleEnum.team_lead:
+        avg_candidates_per_vacancy = (
+            db.query(Vacancy.id, func.count(Resume.id).label("candidates_count"))
+            .join(Resume, Resume.vacancy_id == Vacancy.id)
+            .filter(Resume.user_id.in_(hr_ids))
+            .group_by(Vacancy.id)
+            .all()
+        )
 
     avg_candidates_per_vacancy_result = [
-        {"vacancy_id": row.id_vacancy, "candidates_count": row.candidates_count}
+        {"vacancy_id": row.id, "candidates_count": row.candidates_count}
         for row in avg_candidates_per_vacancy
     ]
 
