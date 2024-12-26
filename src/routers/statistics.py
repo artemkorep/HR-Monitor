@@ -21,17 +21,19 @@ async def get_statistics(
     if current_user.role == UserRoleEnum.hr:
         resumes = db.query(Resume).filter(Resume.user_id == current_user.id).all()
     elif current_user.role == UserRoleEnum.team_lead:
-
         hr_ids = (
             db.query(User.id)
             .join(UserTeamLead, UserTeamLead.team_lead_user_id == current_user.id)
+            .filter(User.id == UserTeamLead.hr_user_id)
             .all()
         )
         hr_ids = [hr_id[0] for hr_id in hr_ids]
 
-        resumes = db.query(Resume).filter(Resume.user_id.in_(hr_ids)).all()
+        if hr_ids:
+            resumes = db.query(Resume).filter(Resume.user_id.in_(hr_ids)).all()
+        else:
+            resumes = []
     else:
-
         resumes = db.query(Resume).all()
 
     for resume in resumes:
@@ -75,6 +77,7 @@ async def get_statistics(
             .all()
         )
     elif current_user.role == UserRoleEnum.team_lead:
+
         avg_candidates_per_vacancy = (
             db.query(Vacancy.id, func.count(Resume.id).label("candidates_count"))
             .join(Resume, Resume.vacancy_id == Vacancy.id)
@@ -82,7 +85,6 @@ async def get_statistics(
             .group_by(Vacancy.id)
             .all()
         )
-
     avg_candidates_per_vacancy_result = [
         {"vacancy_id": row.id, "candidates_count": row.candidates_count}
         for row in avg_candidates_per_vacancy
