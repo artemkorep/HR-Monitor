@@ -13,13 +13,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  adminer:
-    image: adminer
-    restart: always
-    depends_on:
-      - db
-    ports:
-      - '8081:8080'
   web:
     build: .
     container_name: pp-web-1
