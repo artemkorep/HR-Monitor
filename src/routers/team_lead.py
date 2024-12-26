@@ -7,6 +7,7 @@ from src.schemas import (
     SLAReportRequest,
     SLAReportResponse,
     SLAResponse,
+    UserRoleEnum,
 )
 from src.core.dependencies import check_team_lead
 from src.core.db.database import get_db
@@ -23,6 +24,13 @@ async def activate_hr(
     )
     if existing_team_lead:
         raise HTTPException(status_code=400, detail="This HR is already assigned")
+    team_lead = (
+        db.query(User)
+        .filter(User.role == UserRoleEnum.team_lead)
+        .filter(User.id == hr_id)
+    ).first()
+    if team_lead:
+        raise HTTPException(status_code=400, detail="This user have role Team Lead")
     new_team_lead_assignment = UserTeamLead(team_lead_user_id=user.id, hr_user_id=hr_id)
     db.add(new_team_lead_assignment)
     db.commit()
